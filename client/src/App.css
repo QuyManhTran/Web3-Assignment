@@ -1,0 +1,27 @@
+::-webkit-scrollbar {
+    width: 6px;
+    border-radius: 99px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 99px;
+}
+
+.explorer::-webkit-scrollbar-thumb {
+    background: transparent;
+}
+
+.explorer:hover::-webkit-scrollbar-thumb {
+    background: #888
+}
+
+.body {
+    scroll-behavior: smooth;
+}
