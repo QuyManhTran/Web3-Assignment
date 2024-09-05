@@ -81,6 +81,7 @@ export default class AuthService {
 
     async refresh({ request }: { request: Request }) {
         const refreshToken = request.cookie('jwt')
+        const publicAddress = request.input('publicAddress', '')
         if (!refreshToken)
             throw new Exception('Invalid refresh token', { status: ResponseStatus.Unauthorized })
         const payload = jwt.verify(refreshToken, env.get('JWT_REFRESH_SECRET'))
@@ -90,6 +91,8 @@ export default class AuthService {
             })
         }
         const user = await User.findOrFail(payload.id)
+        if (user.publicAddress !== publicAddress)
+            throw new Exception('Invalid refresh token', { status: ResponseStatus.Unauthorized })
         const accessToken = await User.accessTokens.create(user)
         return { result: true, data: { accessToken: accessToken.toJSON().token } }
     }

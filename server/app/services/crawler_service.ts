@@ -123,7 +123,7 @@ export default class CrawlerService {
     }
 
     queryJob = () => {
-        const job = new CronJob('*/1 * * * *', async () => {
+        const job = new CronJob('*/30 * * * * *', async () => {
             const mintTokenData = await this.queryTransferEvents(
                 EventsContract.MintToken,
                 `${EventsContract.MintToken}BlockNumber`
@@ -155,6 +155,6 @@ export default class CrawlerService {
             )
             // console.log('----------withdrawNftTokenData----------', withdrawNftTokenData)
         })
-        job.start()
+        // job.start()
     }
 }

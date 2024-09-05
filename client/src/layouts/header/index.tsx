@@ -69,6 +69,9 @@ const HeaderLayout = () => {
         const [address] = await window.ethereum.request({
             method: "eth_requestAccounts",
         });
+        if (addressWallet === address && !accessToken) {
+            return onRefreshToken(addressWallet);
+        }
         if (address) {
             setAddressWallet(address);
             checkNetwork();
@@ -77,7 +80,7 @@ const HeaderLayout = () => {
 
     const onRefreshToken = async (addressWallet: string) => {
         try {
-            const response = await refresh();
+            const response = await refresh(addressWallet);
             console.log(response.data);
             if (response.data.result) {
                 setAccessToken(response.data.data?.accessToken || "");
@@ -94,7 +97,7 @@ const HeaderLayout = () => {
             const response = await login(addressWallet);
             console.log(response.data);
             if (!response.data.result) {
-                onRegister(addressWallet);
+                return onRegister(addressWallet);
             }
             onSignMessage(response.data.data?.nonce || "");
         } catch (error) {
@@ -106,6 +109,8 @@ const HeaderLayout = () => {
         try {
             const response = await register(addressWallet);
             console.log(response.data);
+            if (response.data.result)
+                onSignMessage(response.data.data?.nonce || "");
         } catch (error) {
             console.log(error);
         }
@@ -141,16 +146,24 @@ const HeaderLayout = () => {
         }
     };
 
+    const getChainId = async () => {
+        try {
+            const chainId = await window.ethereum.request({
+                method: "net_version",
+            });
+            console.log("chainId", chainId);
+            setChainId(`0x${parseInt(chainId).toString(16)}`);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
     useEffect(() => {
-        console.log("chainId", (window.ethereum as any).networkVersion);
-        setChainId(
-            `0x${parseInt((window.ethereum as any).networkVersion).toString(
-                16
-            )}`
-        );
+        getChainId();
         if (isConnect) connectWallet();
 
         (window.ethereum as any).on("chainChanged", (chainId: any) => {
+            console.log("chainChanged", chainId);
             setChainId(chainId);
         });
     }, []);

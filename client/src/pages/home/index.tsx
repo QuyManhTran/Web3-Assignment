@@ -238,6 +238,7 @@ const HomePage = () => {
     }, []);
 
     const isRightNetwork: boolean = useMemo(() => {
+        console.log("chainId", chainId);
         return chainId === `0x${parseInt(Network.chainId).toString(16)}`;
     }, [chainId]);
 

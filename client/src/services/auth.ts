@@ -26,6 +26,8 @@ export const verify = async (signature: string, publicAddress: string) => {
     });
 };
 
-export const refresh = async () => {
-    return request.post<AuthVerifyResponse>(`/auth/refresh`);
+export const refresh = async (publicAddress: string) => {
+    return request.post<AuthVerifyResponse>(`/auth/refresh`, {
+        publicAddress,
+    });
 };
