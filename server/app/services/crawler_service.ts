@@ -16,7 +16,7 @@ export default class CrawlerService {
     private abi: any
     private contract: Contract
     constructor(protected readonly redisService: RedisService) {
-        this.stepCrawler = 100
+        this.stepCrawler = 1000
         this.provider = new JsonRpcProvider('https://bsc-testnet-rpc.publicnode.com')
         this.contractAddress = contractAddress.Token
         this.abi = artifact.abi
@@ -123,7 +123,7 @@ export default class CrawlerService {
     }
 
     queryJob = () => {
-        const job = new CronJob('*/30 * * * * *', async () => {
+        const job = new CronJob('*/1 * * * *', async () => {
             const mintTokenData = await this.queryTransferEvents(
                 EventsContract.MintToken,
                 `${EventsContract.MintToken}BlockNumber`
@@ -155,6 +155,6 @@ export default class CrawlerService {
             )
             // console.log('----------withdrawNftTokenData----------', withdrawNftTokenData)
         })
-        // job.start()
+        job.start()
     }
 }

@@ -1,27 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Button, Dropdown, Navbar } from "flowbite-react";
-import metamask from "@/assets/images/metamask.svg";
+import { Navbar } from "flowbite-react";
 import { AuthState } from "@/stores/auth";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import LogoutIcon from "@/components/icons/Logout";
-import { Network } from "@/constants/network";
 import { login, refresh, register, verify } from "@/services/auth";
 import { toast } from "react-toastify";
+import { useWeb3ModalAccount } from "@web3modal/ethers/react";
 
 const HeaderLayout = () => {
-    const {
-        chainId,
-        isConnect,
-        addressWallet,
-        signer,
-        accessToken,
-        disconnect,
-        connect,
-        setChainId,
-        setAddressWallet,
-        setAccessToken,
-    } = AuthState();
+    const { signer, accessToken, setAccessToken } = AuthState();
+
+    const { address } = useWeb3ModalAccount();
 
     const navigate = useNavigate();
 
@@ -31,51 +19,6 @@ const HeaderLayout = () => {
 
     const navigateHome = () => {
         navigate("/");
-    };
-
-    const truncateWallet = useMemo(() => {
-        if (addressWallet) {
-            return `${addressWallet.slice(0, 4)}...${addressWallet.slice(-4)}`;
-        }
-        return "";
-    }, [addressWallet]);
-
-    const switchToHardHat = async () => {
-        try {
-            await window.ethereum.request({
-                method: "wallet_switchEthereumChain",
-                params: [
-                    { chainId: `0x${parseInt(Network.chainId).toString(16)}` },
-                ],
-            });
-            if (!isConnect) connect();
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const checkNetwork = async () => {
-        if ((window.ethereum as any).networkVersion !== Network.chainId) {
-            console.log(
-                "Please switch to HardHat network",
-                (window.ethereum as any).networkVersion
-            );
-            return switchToHardHat();
-        }
-        if (!isConnect) connect();
-    };
-
-    const connectWallet = async () => {
-        const [address] = await window.ethereum.request({
-            method: "eth_requestAccounts",
-        });
-        if (addressWallet === address && !accessToken) {
-            return onRefreshToken(addressWallet);
-        }
-        if (address) {
-            setAddressWallet(address);
-            checkNetwork();
-        }
     };
 
     const onRefreshToken = async (addressWallet: string) => {
@@ -134,7 +77,7 @@ const HeaderLayout = () => {
 
     const onVerify = async (signature: string) => {
         try {
-            const response = await verify(signature, addressWallet);
+            const response = await verify(signature, address || "");
             console.log(response.data);
             if (response.data.result) {
                 setAccessToken(response.data.data?.accessToken || "");
@@ -146,36 +89,11 @@ const HeaderLayout = () => {
         }
     };
 
-    const getChainId = async () => {
-        try {
-            const chainId = await window.ethereum.request({
-                method: "net_version",
-            });
-            console.log("chainId", chainId);
-            setChainId(`0x${parseInt(chainId).toString(16)}`);
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
     useEffect(() => {
-        getChainId();
-        if (isConnect) connectWallet();
-
-        (window.ethereum as any).on("chainChanged", (chainId: any) => {
-            console.log("chainChanged", chainId);
-            setChainId(chainId);
-        });
-    }, []);
-
-    useEffect(() => {
-        if (chainId && !addressWallet) connectWallet();
-    }, [chainId]);
-
-    useEffect(() => {
-        if (addressWallet && signer && !accessToken) {
-            console.log("onLogin-------------------", addressWallet);
-            onRefreshToken(addressWallet);
+        console.log("signer", signer);
+        if (address && signer && !accessToken) {
+            console.log("onLogin-------------------", address);
+            onRefreshToken(address);
         }
     }, [signer]);
 
@@ -192,7 +110,7 @@ const HeaderLayout = () => {
                 </span>
             </Navbar.Brand>
             <div className="flex md:order-2">
-                {(!isConnect || !accessToken) && (
+                {/* {(!isConnected || !accessToken) && (
                     <Button color={"purple"} onClick={connectWallet}>
                         <img
                             src={metamask}
@@ -202,7 +120,7 @@ const HeaderLayout = () => {
                         Connect to metamask
                     </Button>
                 )}
-                {isConnect && accessToken && (
+                {isConnected && accessToken && (
                     <Dropdown
                         color={"purple"}
                         label={
@@ -212,23 +130,16 @@ const HeaderLayout = () => {
                                     alt="metamask-icon"
                                     className="w-6 h-5 mr-2"
                                 />
-                                {addressWallet
-                                    ? truncateWallet
-                                    : "Connecting..."}
+                                {address ? truncateWallet : "Connecting..."}
                             </>
                         }
                     >
-                        {/* <Dropdown.Header>
-                            <span className="block truncate text-sm font-medium">
-                                {truncateWallet}
-                            </span>
-                        </Dropdown.Header>
-                        <Dropdown.Divider /> */}
                         <Dropdown.Item onClick={disconnect} icon={LogoutIcon}>
                             Disconnect
                         </Dropdown.Item>
                     </Dropdown>
-                )}
+                )} */}
+                <w3m-button loadingLabel="Loading..." balance="hide" />
             </div>
             <Navbar.Toggle />
             <Navbar.Collapse>
@@ -245,7 +156,7 @@ const HeaderLayout = () => {
                 >
                     Explorer
                 </Navbar.Link>
-                <Navbar.Link className="cursor-pointer">Services</Navbar.Link>
+                <Navbar.Link className="cursor-pointer">Features</Navbar.Link>
                 <Navbar.Link className="cursor-pointer">Pricing</Navbar.Link>
                 <Navbar.Link className="cursor-pointer">Contact</Navbar.Link>
             </Navbar.Collapse>

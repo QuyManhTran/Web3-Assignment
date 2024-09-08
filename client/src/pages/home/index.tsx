@@ -1,24 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AuthState } from "@/stores/auth";
 import { formatEther, parseEther } from "ethers";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Label, TextInput } from "flowbite-react";
 import { toast } from "react-toastify";
 import metamask from "@/assets/images/metamask.svg";
-import cat from "@/assets/images/cat.png";
-import { Network } from "@/constants/network";
 import APRContractAddress from "@/contracts/APR/contract-address.json";
+import { useWeb3ModalAccount } from "@web3modal/ethers/react";
 const HomePage = () => {
-    const {
-        addressWallet,
-        chainId,
-        isConnect,
-        provider,
-        token,
-        ERC20Token,
-        ERC721Token,
-        connect,
-    } = AuthState();
+    const { provider, token, ERC20Token, ERC721Token } = AuthState();
+    const { address, isConnected } = useWeb3ModalAccount();
     // const [isRightNetwork, setIsRightNetwork] = useState<boolean>(true);
     const [balanceERC20, setBalanceERC20] = useState<string>("");
     const [balanceERC721, setBalanceERC721] = useState<string>("");
@@ -28,27 +19,13 @@ const HomePage = () => {
     const [apr, setApr] = useState<string>("8");
     const pollDataInterval: { current: NodeJS.Timeout | null } = useRef(null);
 
-    const switchToHardHat = async () => {
-        try {
-            await window.ethereum.request({
-                method: "wallet_switchEthereumChain",
-                params: [
-                    { chainId: `0x${parseInt(Network.chainId).toString(16)}` },
-                ],
-            });
-            if (!isConnect) connect();
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
     const getInfor = async () => {
         console.log("getInfor");
         if (!provider || !token) return;
-        const _walletBalance = await provider.getBalance(addressWallet);
+        const _walletBalance = await provider.getBalance(address as string);
         setWalletBalance(formatEther(_walletBalance));
 
-        const _apr = await token.getAPR(addressWallet);
+        const _apr = await token.getAPR(address);
         setApr(_apr.toString());
 
         const ERC20Balance = await token.getErc20Balance();
@@ -90,7 +67,7 @@ const HomePage = () => {
 
     const faucet = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!isConnect) return toast.error("Please connect wallet first !");
+        if (!isConnected) return toast.error("Please connect wallet first !");
         if (!ERC20Token) return;
         try {
             const formData = new FormData(event.target as HTMLFormElement);
@@ -114,7 +91,7 @@ const HomePage = () => {
 
     const deposit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!isConnect) return toast.error("Please connect wallet first !");
+        if (!isConnected) return toast.error("Please connect wallet first !");
         if (!token || !ERC20Token) return;
         try {
             const formData = new FormData(event.target as HTMLFormElement);
@@ -237,11 +214,6 @@ const HomePage = () => {
         return () => stopPolling();
     }, []);
 
-    const isRightNetwork: boolean = useMemo(() => {
-        console.log("chainId", chainId);
-        return chainId === `0x${parseInt(Network.chainId).toString(16)}`;
-    }, [chainId]);
-
     useEffect(() => {
         if (token) {
             getInfor();
@@ -250,179 +222,158 @@ const HomePage = () => {
     }, [token]);
 
     return (
-        <>
-            {!isRightNetwork && (
-                <div className="flex flex-col w-full h-full items-center">
-                    <img src={cat} className="object-cover pt-2" />
-                    <Button color={"yellow"} onClick={switchToHardHat}>
-                        <img
-                            src={metamask}
-                            alt="metamask-icon"
-                            className="w-6 h-5 mr-2"
-                        />
-                        Please switch to BSC Testnet
+        <div className="grid grid-cols-1 md:grid-cols-6 w-full gap-4">
+            <div className="col-span-4 shadow-md bg-white rounded-lg px-4 py-4 flex flex-col gap-6">
+                <form
+                    className="flex flex-row justify-start items-center gap-4"
+                    onSubmit={faucet}
+                >
+                    <Label
+                        htmlFor="faucet"
+                        value="Faucet Token: "
+                        className="text-xl"
+                    />
+                    <TextInput
+                        id="faucet"
+                        type="number"
+                        name="faucet"
+                        min={0}
+                        max={1000000}
+                        step={1}
+                        defaultValue={0}
+                        className="w-[200px]"
+                    />
+                    <Button gradientMonochrome={"lime"} type="submit">
+                        Faucet
+                    </Button>
+                </form>
+                <form
+                    className="flex flex-row justify-start items-center gap-4"
+                    onSubmit={deposit}
+                >
+                    <Label
+                        htmlFor="deposit"
+                        value="Deposit ERCToken: "
+                        className="text-xl"
+                    />
+                    <TextInput
+                        id="deposit"
+                        type="number"
+                        name="deposit"
+                        min={0}
+                        step={1}
+                        defaultValue={0}
+                        className="w-[200px]"
+                    />
+                    <Button gradientMonochrome={"pink"} type="submit">
+                        Deposit
+                    </Button>
+                </form>
+                <div className="flex flex-row justify-start items-center gap-4">
+                    <Label
+                        htmlFor="withdraw"
+                        value="Withdraw ERCToken: "
+                        className="text-xl"
+                    />
+                    <Button
+                        gradientMonochrome={"purple"}
+                        type="button"
+                        onClick={withdraw}
+                    >
+                        Withdraw
                     </Button>
                 </div>
-            )}
-            {isRightNetwork && (
-                <div className="grid grid-cols-1 md:grid-cols-6 w-full gap-4">
-                    <div className="col-span-4 shadow-md bg-white rounded-lg px-4 py-4 flex flex-col gap-6">
-                        <form
-                            className="flex flex-row justify-start items-center gap-4"
-                            onSubmit={faucet}
-                        >
-                            <Label
-                                htmlFor="faucet"
-                                value="Faucet Token: "
-                                className="text-xl"
-                            />
-                            <TextInput
-                                id="faucet"
-                                type="number"
-                                name="faucet"
-                                min={0}
-                                max={1000000}
-                                step={1}
-                                defaultValue={0}
-                                className="w-[200px]"
-                            />
-                            <Button gradientMonochrome={"lime"} type="submit">
-                                Faucet
+                <div className="flex flex-row justify-start items-center gap-4">
+                    <Label
+                        htmlFor="claim"
+                        value="Claim ERCToken: "
+                        className="text-xl"
+                    />
+                    <Button
+                        gradientMonochrome={"purple"}
+                        type="button"
+                        onClick={claimReward}
+                    >
+                        Claim Reward
+                    </Button>
+                </div>
+                <div>
+                    <h1 className="font-semibold text-xl">Nft:</h1>
+                    <div className="flex flex-row gap-4 justify-start w-full overflow-x-auto mt-2">
+                        {ERC721Data.length > 0 &&
+                            ERC721Data.map((item) => (
+                                <Button
+                                    key={item}
+                                    gradientMonochrome={"success"}
+                                    type="button"
+                                    onClick={() => depositERC721(item)}
+                                    className="group"
+                                >
+                                    <img
+                                        src={metamask}
+                                        alt="icon"
+                                        className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
+                                    />
+                                    Deposit token {item}
+                                </Button>
+                            ))}
+                        {ERC721Data.length === 0 && (
+                            <Button color={"light"} disabled>
+                                <img
+                                    src={metamask}
+                                    alt="icon"
+                                    className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
+                                />
+                                No token
                             </Button>
-                        </form>
-                        <form
-                            className="flex flex-row justify-start items-center gap-4"
-                            onSubmit={deposit}
-                        >
-                            <Label
-                                htmlFor="deposit"
-                                value="Deposit ERCToken: "
-                                className="text-xl"
-                            />
-                            <TextInput
-                                id="deposit"
-                                type="number"
-                                name="deposit"
-                                min={0}
-                                step={1}
-                                defaultValue={0}
-                                className="w-[200px]"
-                            />
-                            <Button gradientMonochrome={"pink"} type="submit">
-                                Deposit
-                            </Button>
-                        </form>
-                        <div className="flex flex-row justify-start items-center gap-4">
-                            <Label
-                                htmlFor="withdraw"
-                                value="Withdraw ERCToken: "
-                                className="text-xl"
-                            />
-                            <Button
-                                gradientMonochrome={"purple"}
-                                type="button"
-                                onClick={withdraw}
-                            >
-                                Withdraw
-                            </Button>
-                        </div>
-                        <div className="flex flex-row justify-start items-center gap-4">
-                            <Label
-                                htmlFor="claim"
-                                value="Claim ERCToken: "
-                                className="text-xl"
-                            />
-                            <Button
-                                gradientMonochrome={"purple"}
-                                type="button"
-                                onClick={claimReward}
-                            >
-                                Claim Reward
-                            </Button>
-                        </div>
-                        <div>
-                            <h1 className="font-semibold text-xl">Nft:</h1>
-                            <div className="flex flex-row gap-4 justify-start w-full overflow-x-auto mt-2">
-                                {ERC721Data.length > 0 &&
-                                    ERC721Data.map((item) => (
-                                        <Button
-                                            key={item}
-                                            gradientMonochrome={"success"}
-                                            type="button"
-                                            onClick={() => depositERC721(item)}
-                                            className="group"
-                                        >
-                                            <img
-                                                src={metamask}
-                                                alt="icon"
-                                                className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
-                                            />
-                                            Deposit token {item}
-                                        </Button>
-                                    ))}
-                                {ERC721Data.length === 0 && (
-                                    <Button color={"light"} disabled>
-                                        <img
-                                            src={metamask}
-                                            alt="icon"
-                                            className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
-                                        />
-                                        No token
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                        <div>
-                            <h1 className="font-semibold text-xl">
-                                Deposited Nft:
-                            </h1>
-                            <div className="flex flex-row gap-4 justify-start w-full overflow-x-auto mt-2">
-                                {depositedERC721.map((item) => (
-                                    <Button
-                                        key={item}
-                                        gradientMonochrome={"success"}
-                                        type="button"
-                                        onClick={() => withdrawERC721(item)}
-                                        className="group"
-                                    >
-                                        <img
-                                            src={metamask}
-                                            alt="icon"
-                                            className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
-                                        />
-                                        Withdraw token {item}
-                                    </Button>
-                                ))}
-                                {depositedERC721.length === 0 && (
-                                    <Button color={"light"} disabled>
-                                        <img
-                                            src={metamask}
-                                            alt="icon"
-                                            className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
-                                        />
-                                        No token deposited
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-span-2 shadow-md bg-white rounded-lg px-4 py-2">
-                        <h1 className="text-2xl font-semibold pb-2">
-                            Contract Information
-                        </h1>
-                        <div className="flex flex-col gap-2">
-                            <span>WalletBalance: {walletBalance} GO</span>
-                            <span>APR: {apr}%</span>
-                            <span>BalanceERC20: {balanceERC20}</span>
-                            <span>BalanceERC721: {balanceERC721}</span>
-                            <span>
-                                DepositedERC721: {depositedERC721.length}
-                            </span>
-                        </div>
+                        )}
                     </div>
                 </div>
-            )}
-        </>
+                <div>
+                    <h1 className="font-semibold text-xl">Deposited Nft:</h1>
+                    <div className="flex flex-row gap-4 justify-start w-full overflow-x-auto mt-2">
+                        {depositedERC721.map((item) => (
+                            <Button
+                                key={item}
+                                gradientMonochrome={"success"}
+                                type="button"
+                                onClick={() => withdrawERC721(item)}
+                                className="group"
+                            >
+                                <img
+                                    src={metamask}
+                                    alt="icon"
+                                    className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
+                                />
+                                Withdraw token {item}
+                            </Button>
+                        ))}
+                        {depositedERC721.length === 0 && (
+                            <Button color={"light"} disabled>
+                                <img
+                                    src={metamask}
+                                    alt="icon"
+                                    className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
+                                />
+                                No token deposited
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
+            <div className="col-span-2 shadow-md bg-white rounded-lg px-4 py-2">
+                <h1 className="text-2xl font-semibold pb-2">
+                    Contract Information
+                </h1>
+                <div className="flex flex-col gap-2">
+                    <span>WalletBalance: {walletBalance} GO</span>
+                    <span>APR: {apr}%</span>
+                    <span>BalanceERC20: {balanceERC20}</span>
+                    <span>BalanceERC721: {balanceERC721}</span>
+                    <span>DepositedERC721: {depositedERC721.length}</span>
+                </div>
+            </div>
+        </div>
     );
 };
 
