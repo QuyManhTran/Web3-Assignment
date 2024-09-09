@@ -1,14 +1,24 @@
-import { Navbar } from "flowbite-react";
+import { Button, Modal, Navbar, TextInput } from "flowbite-react";
 import { AuthState } from "@/stores/auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, refresh, register, verify } from "@/services/auth";
 import { toast } from "react-toastify";
 import { useWeb3ModalAccount } from "@web3modal/ethers/react";
 
 const HeaderLayout = () => {
-    const { signer, accessToken, setAccessToken } = AuthState();
-
+    const [openModal, setOpenModal] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
+    const {
+        isAdmin,
+        signer,
+        accessToken,
+        token,
+        setAccessToken,
+        setDefaultApr,
+        setApr: setStoreAPR,
+    } = AuthState();
+    const [apr, setApr] = useState<number>(8);
     const { address } = useWeb3ModalAccount();
 
     const navigate = useNavigate();
@@ -89,6 +99,34 @@ const HeaderLayout = () => {
         }
     };
 
+    const onCloseModal = () => {
+        setOpenModal(false);
+    };
+
+    const onSetAPR = async () => {
+        if (!token) return;
+        try {
+            setLoading(true);
+            const txn = await token.setDefaultAPR(apr);
+            await toast.promise(txn.wait(), {
+                pending: "Setting default APR...",
+                success: "Set APR successfully!",
+                error: "Set APR failed!",
+            });
+            const _apr = await token.getAPR(address);
+            setStoreAPR(parseInt(_apr.toString()));
+
+            const _defaultApr = await token.DEFAULT_APR();
+            setDefaultApr(parseInt(_defaultApr.toString()));
+
+            setOpenModal(false);
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         console.log("signer", signer);
         if (address && signer && !accessToken) {
@@ -98,69 +136,103 @@ const HeaderLayout = () => {
     }, [signer]);
 
     return (
-        <Navbar fluid rounded className="fixed shadow-md w-full z-[999]">
-            <Navbar.Brand href="/">
-                <img
-                    src="https://flowbite-react.com/favicon.svg"
-                    className="mr-3 h-6 sm:h-9"
-                    alt="Flowbite React Logo"
-                />
-                <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
-                    Market place
-                </span>
-            </Navbar.Brand>
-            <div className="flex md:order-2">
-                {/* {(!isConnected || !accessToken) && (
-                    <Button color={"purple"} onClick={connectWallet}>
-                        <img
-                            src={metamask}
-                            alt="metamask-icon"
-                            className="w-6 h-5 mr-2"
-                        />
-                        Connect to metamask
-                    </Button>
-                )}
-                {isConnected && accessToken && (
-                    <Dropdown
-                        color={"purple"}
-                        label={
-                            <>
-                                <img
-                                    src={metamask}
-                                    alt="metamask-icon"
-                                    className="w-6 h-5 mr-2"
-                                />
-                                {address ? truncateWallet : "Connecting..."}
-                            </>
-                        }
+        <>
+            <Navbar fluid rounded className="fixed shadow-md w-full z-[999]">
+                <Navbar.Brand href="/">
+                    <img
+                        src="https://flowbite-react.com/favicon.svg"
+                        className="mr-3 h-6 sm:h-9"
+                        alt="Flowbite React Logo"
+                    />
+                    <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
+                        Market place
+                    </span>
+                </Navbar.Brand>
+                <div className="flex md:order-2 flex-row gap-2 items-center">
+                    {isAdmin && (
+                        <Button
+                            type="button"
+                            onClick={() => setOpenModal(true)}
+                        >
+                            Set APR
+                        </Button>
+                    )}
+                    <w3m-button loadingLabel="Connecting..." balance="hide" />
+                </div>
+                <Navbar.Toggle />
+                <Navbar.Collapse>
+                    <Navbar.Link
+                        onClick={navigateHome}
+                        active
+                        className="cursor-pointer"
                     >
-                        <Dropdown.Item onClick={disconnect} icon={LogoutIcon}>
-                            Disconnect
-                        </Dropdown.Item>
-                    </Dropdown>
-                )} */}
-                <w3m-button loadingLabel="Loading..." balance="hide" />
-            </div>
-            <Navbar.Toggle />
-            <Navbar.Collapse>
-                <Navbar.Link
-                    onClick={navigateHome}
-                    active
-                    className="cursor-pointer"
-                >
-                    Home
-                </Navbar.Link>
-                <Navbar.Link
-                    onClick={navigateExplorer}
-                    className="cursor-pointer"
-                >
-                    Explorer
-                </Navbar.Link>
-                <Navbar.Link className="cursor-pointer">Features</Navbar.Link>
-                <Navbar.Link className="cursor-pointer">Pricing</Navbar.Link>
-                <Navbar.Link className="cursor-pointer">Contact</Navbar.Link>
-            </Navbar.Collapse>
-        </Navbar>
+                        Home
+                    </Navbar.Link>
+                    <Navbar.Link
+                        onClick={navigateExplorer}
+                        className="cursor-pointer"
+                    >
+                        Explorer
+                    </Navbar.Link>
+                    <Navbar.Link className="cursor-pointer">
+                        Features
+                    </Navbar.Link>
+                    <Navbar.Link className="cursor-pointer">
+                        Pricing
+                    </Navbar.Link>
+                    <Navbar.Link className="cursor-pointer">
+                        Contact
+                    </Navbar.Link>
+                </Navbar.Collapse>
+            </Navbar>
+            <Modal
+                show={openModal}
+                size="md"
+                onClose={onCloseModal}
+                popup
+                className="z-[1000]"
+            >
+                <Modal.Header />
+                <Modal.Body>
+                    <div className="space-y-6">
+                        <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+                            Set default APR
+                        </h3>
+                        <div>
+                            <TextInput
+                                id="apr"
+                                required
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={apr}
+                                onChange={(e) => setApr(Number(e.target.value))}
+                            />
+                        </div>
+
+                        <div className="flex flex-row gap-2 w-full justify-end">
+                            <Button
+                                color={"failure"}
+                                outline
+                                type="button"
+                                onClick={onCloseModal}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                className="w-[80px]"
+                                type="button"
+                                onClick={onSetAPR}
+                                isProcessing={loading}
+                                disabled={loading}
+                            >
+                                Set
+                            </Button>
+                        </div>
+                    </div>
+                </Modal.Body>
+            </Modal>
+        </>
     );
 };
 

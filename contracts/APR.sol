@@ -62,8 +62,8 @@ contract APR is Ownable {
     event WithdrawNft(address indexed from, uint256 indexed tokenId, uint256 indexed time);
 
     // Modifiers
-    modifier isExisted(address from){
-        require(_users[from].erc20Balance > 0, "Address is not exist in the system");
+    modifier isEnoughToken(address from){
+        require(_users[from].erc20Balance > 0, "Address is not enough token");
         _;
     }
 
@@ -129,7 +129,7 @@ contract APR is Ownable {
         emit Deposit(from, amount, block.timestamp);
     }
 
-     function _claimReward(address from) private isExisted(from) isApprovedWithdraw(from) isClaimed(from) returns (uint256){
+     function _claimReward(address from) private isEnoughToken(from) isClaimed(from) returns (uint256){
         uint256 timeNow = block.timestamp;
         uint256 timeDiff = timeNow - _rewardTrackings[from].time;
         uint256 reward = (_users[from].erc20Balance * getAPR(from) * timeDiff) / (100 * SECONDS_IN_YEAR);
@@ -145,7 +145,7 @@ contract APR is Ownable {
         emit Claim(msg.sender, reward, block.timestamp);
     }
 
-    function _withdraw(address from) private returns (uint256){
+    function _withdraw(address from) private isApprovedWithdraw(from) returns (uint256) {
         uint256 rewardAmount = _claimReward(from);
         erc20Contract.claimReward(msg.sender, rewardAmount);
         erc20Contract.transferToUser(from, _users[from].erc20Balance);

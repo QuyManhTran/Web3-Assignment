@@ -66,7 +66,9 @@ createWeb3Modal({
 
 const App = () => {
     const {
+        token,
         provider,
+        setAdmin,
         setSigner,
         setToken,
         setERC20Token,
@@ -119,6 +121,16 @@ const App = () => {
         setERC721Token(undefined);
     };
 
+    const checkAdmin = async () => {
+        if (token) {
+            const adminAddress = await token.owner();
+            setAdmin(
+                address?.toLocaleLowerCase() ===
+                    adminAddress.toLocaleLowerCase()
+            );
+        }
+    };
+
     useEffect(() => {
         (window.ethereum as any).on(
             "accountsChanged",
@@ -143,6 +155,10 @@ const App = () => {
             setIsFirstTime(false);
         }
     }, [provider]);
+
+    useEffect(() => {
+        checkAdmin();
+    }, [token]);
 
     useEffect(() => {
         (window.ethereum as any).on(
