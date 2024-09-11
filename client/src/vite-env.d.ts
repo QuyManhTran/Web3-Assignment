@@ -8,6 +8,7 @@ interface ImportMetaEnv {
     readonly VITE_SERVER_URL: string;
     readonly VITE_SERVER_API_VERSION: string;
     readonly VITE_SIGNATURE_MESSAGE: string;
+    readonly VITE_PROJECT_ID: string;
 }
 
 interface ImportMeta {

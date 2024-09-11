@@ -21,6 +21,7 @@ const HomePage = () => {
     } = AuthState();
     const { address, isConnected } = useWeb3ModalAccount();
     const [balanceERC20, setBalanceERC20] = useState<string>("");
+    const [depostiedERC20, setDepositedERC20] = useState<string>("");
     const [balanceERC721, setBalanceERC721] = useState<string>("");
     const [walletBalance, setWalletBalance] = useState<string>("");
     const [ERC721Data, setERC721Data] = useState<string[]>([]);
@@ -71,6 +72,9 @@ const HomePage = () => {
         const ERC20Balance = await token.getErc20Balance();
         setBalanceERC20(formatEther(ERC20Balance.toString()));
 
+        const depositedERC20 = await token.getDepositedErc20Balance();
+        setDepositedERC20(formatEther(depositedERC20.toString()));
+
         const ERC721Balance = await token.getErc721Balance();
         setBalanceERC721(ERC721Balance.length);
         if (ERC721Balance.length === 0) {
@@ -95,12 +99,6 @@ const HomePage = () => {
         }, 10000);
     };
 
-    const resetState = () => {
-        setBalanceERC20("");
-        setBalanceERC721("");
-        setWalletBalance("");
-    };
-
     const stopPolling = () => {
         clearInterval(pollDataInterval.current as NodeJS.Timeout);
     };
@@ -123,8 +121,9 @@ const HomePage = () => {
                 success: "Faucet success",
                 error: "Faucet error",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
+            toast.error(error?.reason || "Faucet error");
         } finally {
             setIsLoadingFaucet(false);
             await getInfor();
@@ -161,9 +160,9 @@ const HomePage = () => {
                 success: "Deposit success",
                 error: "Deposit error",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
-            toast.error("Deposit error");
+            toast.error(error?.reason || "Deposit error");
         } finally {
             setIsLoadingDeposit(false);
             await getInfor();
@@ -172,24 +171,34 @@ const HomePage = () => {
 
     const withdraw = useCallback(async () => {
         if (!token) return;
-        const tx = await token.withdraw();
-        await toast.promise(tx.wait(), {
-            pending: "Withdrawing...",
-            success: "Withdraw success",
-            error: "Withdraw error",
-        });
-        await getInfor();
+        try {
+            const tx = await token.withdraw();
+            await toast.promise(tx.wait(), {
+                pending: "Withdrawing...",
+                success: "Withdraw success",
+                error: "Withdraw error",
+            });
+            await getInfor();
+        } catch (error: any) {
+            console.log(error);
+            toast.error(error?.reason || "Withdraw error !");
+        }
     }, [token]);
 
     const claimReward = useCallback(async () => {
         if (!token) return;
-        const tx = await token.claimReward();
-        await toast.promise(tx.wait(), {
-            pending: "Claiming...",
-            success: "Claim success",
-            error: "Claim error",
-        });
-        await getInfor();
+        try {
+            const tx = await token.claimReward();
+            await toast.promise(tx.wait(), {
+                pending: "Claiming...",
+                success: "Claim success",
+                error: "Claim error",
+            });
+            await getInfor();
+        } catch (error: any) {
+            console.log(error);
+            toast.error(error?.reason || "Claim error !");
+        }
     }, [token]);
 
     const depositERC721 = async (tokenId: string) => {
@@ -212,8 +221,9 @@ const HomePage = () => {
                 success: "Deposit NTF success",
                 error: "Deposit NFT error",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
+            toast.error(error?.reason || "Deposit NFT error");
         } finally {
             setIsLoadingDepositNft(false);
             await getInfor();
@@ -230,8 +240,9 @@ const HomePage = () => {
                 success: "Withdraw NFT success",
                 error: "Withdraw NFT error",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
+            toast.error(error?.reason || "Withdraw NFT error");
         } finally {
             setIsLoadingWithdrawNft(false);
             await getInfor();
@@ -239,16 +250,6 @@ const HomePage = () => {
     };
 
     useEffect(() => {
-        (window.ethereum as any).on(
-            "accountsChanged",
-            ([newAddress]: string[]) => {
-                stopPolling();
-                console.log(newAddress);
-                if (newAddress) {
-                    resetState();
-                }
-            }
-        );
         return () => stopPolling();
     }, []);
 
@@ -285,6 +286,7 @@ const HomePage = () => {
                         gradientMonochrome={"lime"}
                         type="submit"
                         disabled={isLoadingFaucet}
+                        isProcessing={isLoadingFaucet}
                     >
                         Faucet
                     </Button>
@@ -311,6 +313,7 @@ const HomePage = () => {
                         gradientMonochrome={"pink"}
                         type="submit"
                         disabled={isLoadingDeposit}
+                        isProcessing={isLoadingDeposit}
                     >
                         Deposit
                     </Button>
@@ -351,6 +354,7 @@ const HomePage = () => {
                                     onClick={() => depositERC721(item)}
                                     className="group"
                                     disabled={isLoadingDepositNft}
+                                    isProcessing={isLoadingDepositNft}
                                 >
                                     <img
                                         src={metamask}
@@ -383,6 +387,7 @@ const HomePage = () => {
                                 onClick={() => withdrawERC721(item)}
                                 className="group"
                                 disabled={isLoadingWithdrawNft}
+                                isProcessing={isLoadingWithdrawNft}
                             >
                                 <img
                                     src={metamask}
@@ -414,6 +419,7 @@ const HomePage = () => {
                     <span>Default APR: {defaultApr}%</span>
                     <span>APR: {apr}%</span>
                     <span>BalanceERC20: {balanceERC20}</span>
+                    <span>DepositedERC20: {depostiedERC20}</span>
                     <span>BalanceERC721: {balanceERC721}</span>
                     <span>DepositedERC721: {depositedERC721.length}</span>
                 </div>

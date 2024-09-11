@@ -16,17 +16,8 @@ import {
     useWeb3ModalAccount,
     useWeb3ModalProvider,
 } from "@web3modal/ethers/react";
-// 1. Get projectId
 
-const generateHexString = (bytes: number) => {
-    const array = new Uint8Array(bytes);
-    window.crypto.getRandomValues(array);
-    return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
-        ""
-    );
-};
-
-const projectId = generateHexString(16);
+const projectId = import.meta.env.VITE_PROJECT_ID;
 
 // 2. Set chains
 const mainnet = {
@@ -41,7 +32,7 @@ const mainnet = {
 const metadata = {
     name: "Web3",
     description: "This is a APR dapps",
-    url: "http://localhost:5173", // origin must match your domain & subdomain
+    url: "https://web3.quymanh.online", // origin must match your domain & subdomain
     icons: ["https://flowbite-react.com/favicon.svg"],
 };
 
@@ -82,8 +73,7 @@ const App = () => {
 
     const connectContract = async () => {
         if (provider) {
-            console.log("djdhdshsdsfhdhh");
-            const signer = await provider.getSigner(0);
+            const signer = await provider.getSigner(address);
             setSigner(signer);
             const _token = new Contract(
                 APRContractAddress.Token,
@@ -132,19 +122,9 @@ const App = () => {
     };
 
     useEffect(() => {
-        (window.ethereum as any).on(
-            "accountsChanged",
-            ([newAddress]: string[]) => {
-                if (newAddress) {
-                    resetState();
-                    setAccessToken("");
-                }
-            }
-        );
-    }, []);
-
-    useEffect(() => {
         if (address && provider && isConnected && !isFirstTime) {
+            resetState();
+            setAccessToken("");
             connectContract();
         }
     }, [address]);
@@ -159,18 +139,6 @@ const App = () => {
     useEffect(() => {
         checkAdmin();
     }, [token]);
-
-    useEffect(() => {
-        (window.ethereum as any).on(
-            "accountsChanged",
-            ([newAddress]: string[]) => {
-                if (newAddress) {
-                    console.log("djdhdshsdsfhdhh");
-                    setAccessToken("");
-                }
-            }
-        );
-    }, []);
 
     useEffect(() => {
         if (walletProvider) {

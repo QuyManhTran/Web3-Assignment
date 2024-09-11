@@ -18,8 +18,8 @@ const CountDown = ({ timeInSeconds, action, title }: CountDownProps) => {
     }, [timeLeft]);
 
     useEffect(() => {
-        if (timeLeft)
-            clearInterval(countDownInterval.current as NodeJS.Timeout);
+        if (timeInSeconds <= 0) return;
+        clearInterval(countDownInterval.current as NodeJS.Timeout);
         setTimeLeft(timeInSeconds);
         countDownInterval.current = setInterval(() => {
             setTimeLeft((prev) => {

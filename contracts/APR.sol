@@ -199,6 +199,10 @@ contract APR is Ownable {
         return erc20Contract.balanceOf(msg.sender);
     }
 
+    function getDepositedErc20Balance() public view returns (uint256){
+        return _users[msg.sender].erc20Balance;
+    }
+
     function getErc721Balance() public view returns (uint256[] memory){
         uint256 erc721Length =  erc721Contract.balanceOf(msg.sender);
         uint256[] memory result = new uint256[](erc721Length);
