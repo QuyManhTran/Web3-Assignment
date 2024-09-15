@@ -1,0 +1,47 @@
+name: Docker Client Image CI
+
+on:
+    push:
+        branches: ["main"]
+        paths:
+            - "client/**"
+    pull_request:
+        branches: ["main"]
+        paths:
+            - "client/**"
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Create .env
+              run: |
+                  touch client/.env
+                  echo "VITE_SERVER_URL=\"\"" >> client/.env
+                  echo "VITE_SERVER_API_VERSION=v1" >> client/.env
+                  echo "VITE_SIGNATURE_MESSAGE=\"${{ secrets.SIGN_MESSAGE }}\"" >> client/.env
+                  echo "VITE_PROJECT_ID=${{ secrets.WALLET_CONNECT_PROJECT_ID }}" >> client/.env
+
+            - name: show .env
+              run: |
+                  cat client/.env
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Login to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKER_USERNAME }}
+                  password: ${{ secrets.DOCKER_PASSWORD }}
+
+            - name: Build and push
+              uses: docker/build-push-action@v6
+              with:
+                  context: ./client
+                  push: true
+                  tags: ${{ secrets.DOCKER_REPOSITORY_NAME }}:client-v1.0
