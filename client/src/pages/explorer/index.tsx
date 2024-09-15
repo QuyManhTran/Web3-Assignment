@@ -114,6 +114,7 @@ const ExplorerPage = () => {
                                 <Table.HeadCell>
                                     Transaction Hash
                                 </Table.HeadCell>
+                                <Table.HeadCell>Event</Table.HeadCell>
                                 <Table.HeadCell>Block</Table.HeadCell>
                                 <Table.HeadCell>Age</Table.HeadCell>
                                 <Table.HeadCell>From</Table.HeadCell>
@@ -153,6 +154,12 @@ const ExplorerPage = () => {
                                                     )}
                                                 </Table.Cell>
                                                 <Table.Cell>
+                                                    <div className="w-full px-2 py-[4px] outline outline-1 rounded-md outline-primary text-center bg-white">
+                                                        {" "}
+                                                        {item.type}
+                                                    </div>
+                                                </Table.Cell>
+                                                <Table.Cell>
                                                     {item.blockNumber}
                                                 </Table.Cell>
                                                 <Table.Cell>
@@ -161,7 +168,7 @@ const ExplorerPage = () => {
                                                     ).fromNow()}
                                                 </Table.Cell>
                                                 <Table.Cell
-                                                    className="text-primary cursor-pointer"
+                                                    className="text-primary cursor-pointer font-medium"
                                                     onClick={() => {
                                                         setKeyword(item.from);
                                                         onResetPage();

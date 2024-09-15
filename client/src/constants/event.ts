@@ -1,6 +1,5 @@
 export enum EventsName {
     ALL = "ALL",
-    MintToken = "MintToken",
     Deposit = "Deposit",
     Withdraw = "Withdraw",
     Claim = "Claim",

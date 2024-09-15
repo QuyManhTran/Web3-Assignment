@@ -78,6 +78,18 @@ describe("Test", function () {
         );
     });
 
+    it("Shouldn't withdraw", async function () {
+        const { ERC20Token, APR, APRAddress } = await loadFixture(
+            deployTokenFixture
+        );
+        await ERC20Token.approve(APRAddress, ethers.parseEther("1000000"));
+        await APR.deposit(1000000);
+        await time.increase(20);
+        await expect(APR.withdraw()).to.be.revertedWith(
+            "APR: Withdraw interval is not passed"
+        );
+    });
+
     it("Should claimreward", async function () {
         const { ERC20Token, APR, APRAddress, addr1 } = await loadFixture(
             deployTokenFixture
@@ -92,6 +104,22 @@ describe("Test", function () {
         await APR.connect(addr1).claimReward();
         expect(await APR.getErc20Balance()).to.greaterThan(
             ethers.parseEther("0")
+        );
+    });
+
+    it("Shouldn't claimreward", async function () {
+        const { ERC20Token, APR, APRAddress, addr1 } = await loadFixture(
+            deployTokenFixture
+        );
+        await ERC20Token.connect(addr1).faucet(1000000);
+        await ERC20Token.connect(addr1).approve(
+            APRAddress,
+            ethers.parseEther("1000000")
+        );
+        await APR.connect(addr1).deposit(1000000);
+        await time.increase(20);
+        await expect(APR.connect(addr1).claimReward()).to.be.revertedWith(
+            "APR: Claim interval is not passed"
         );
     });
 

@@ -8,6 +8,7 @@ import metamask from "@/assets/images/metamask.svg";
 import APRContractAddress from "@/contracts/APR/contract-address.json";
 import { useWeb3ModalAccount } from "@web3modal/ethers/react";
 import CountDown from "@/components/countdown";
+import NFTBtn from "@/components/NFTBtn";
 const HomePage = () => {
     const {
         apr,
@@ -31,10 +32,6 @@ const HomePage = () => {
     const [withdrawERC20Time, setWithdrawERC20Time] = useState<number>(0);
     const [isLoadingFaucet, setIsLoadingFaucet] = useState<boolean>(false);
     const [isLoadingDeposit, setIsLoadingDeposit] = useState<boolean>(false);
-    const [isLoadingDepositNft, setIsLoadingDepositNft] =
-        useState<boolean>(false);
-    const [isLoadingWithdrawNft, setIsLoadingWithdrawNft] =
-        useState<boolean>(false);
 
     const getInfor = async () => {
         console.log("getInfor");
@@ -203,50 +200,49 @@ const HomePage = () => {
 
     const depositERC721 = async (tokenId: string) => {
         if (!token || !ERC721Token) return;
-        try {
-            setIsLoadingDepositNft(true);
-            const txnApprove = await ERC721Token.approve(
-                APRContractAddress.Token,
-                parseInt(tokenId)
-            );
+        const txnApprove = await ERC721Token.approve(
+            APRContractAddress.Token,
+            parseInt(tokenId)
+        );
 
-            await toast.promise(txnApprove.wait(), {
-                pending: "Approving...",
-                success: "Approve success",
-                error: "Approve error",
-            });
-            const tx = await token.depositERC721(parseInt(tokenId));
-            await toast.promise(tx.wait(), {
-                pending: "Depositing NFT...",
-                success: "Deposit NTF success",
-                error: "Deposit NFT error",
-            });
-        } catch (error: any) {
-            console.log(error);
-            toast.error(error?.reason || "Deposit NFT error");
-        } finally {
-            setIsLoadingDepositNft(false);
-            await getInfor();
-        }
+        await toast.promise(txnApprove.wait(), {
+            pending: "Approving...",
+            success: "Approve success",
+            error: "Approve error",
+        });
+        const tx = await token.depositERC721(parseInt(tokenId));
+        await toast.promise(tx.wait(), {
+            pending: "Depositing NFT...",
+            success: "Deposit NTF success",
+            error: "Deposit NFT error",
+        });
+        await getInfor();
     };
 
     const withdrawERC721 = async (tokenId: string) => {
+        // try {
+        //     setIsLoadingWithdrawNft(true);
+        //     const tx = await token.withdrawERC721(parseInt(tokenId));
+        //     await toast.promise(tx.wait(), {
+        //         pending: "Withdraw NFT...",
+        //         success: "Withdraw NFT success",
+        //         error: "Withdraw NFT error",
+        //     });
+        //     await getInfor();
+        // } catch (error: any) {
+        //     console.log(error);
+        //     toast.error(error?.reason || "Withdraw NFT error");
+        // } finally {
+        //     setIsLoadingWithdrawNft(false);
+        // }
         if (!token || !ERC721Token) return;
-        try {
-            setIsLoadingWithdrawNft(true);
-            const tx = await token.withdrawERC721(parseInt(tokenId));
-            await toast.promise(tx.wait(), {
-                pending: "Withdraw NFT...",
-                success: "Withdraw NFT success",
-                error: "Withdraw NFT error",
-            });
-        } catch (error: any) {
-            console.log(error);
-            toast.error(error?.reason || "Withdraw NFT error");
-        } finally {
-            setIsLoadingWithdrawNft(false);
-            await getInfor();
-        }
+        const tx = await token.withdrawERC721(parseInt(tokenId));
+        await toast.promise(tx.wait(), {
+            pending: "Withdraw NFT...",
+            success: "Withdraw NFT success",
+            error: "Withdraw NFT error",
+        });
+        await getInfor();
     };
 
     useEffect(() => {
@@ -297,7 +293,7 @@ const HomePage = () => {
                 >
                     <Label
                         htmlFor="deposit"
-                        value="Deposit ERCToken: "
+                        value="Deposit ERC20Token: "
                         className="text-xl"
                     />
                     <TextInput
@@ -321,7 +317,7 @@ const HomePage = () => {
                 <div className="flex flex-row justify-start items-center gap-4">
                     <Label
                         htmlFor="withdraw"
-                        value="Withdraw ERCToken: "
+                        value="Withdraw ERC20Token: "
                         className="text-xl"
                     />
                     <CountDown
@@ -333,7 +329,7 @@ const HomePage = () => {
                 <div className="flex flex-row justify-start items-center gap-4">
                     <Label
                         htmlFor="claim"
-                        value="Claim ERCToken: "
+                        value="Claim ERC20Token: "
                         className="text-xl"
                     />
                     <CountDown
@@ -347,22 +343,12 @@ const HomePage = () => {
                     <div className="flex flex-row gap-4 justify-start w-full overflow-x-auto mt-2">
                         {ERC721Data.length > 0 &&
                             ERC721Data.map((item) => (
-                                <Button
+                                <NFTBtn
+                                    action={() => depositERC721(item)}
+                                    item={item}
+                                    title="Deposit token"
                                     key={item}
-                                    gradientMonochrome={"success"}
-                                    type="button"
-                                    onClick={() => depositERC721(item)}
-                                    className="group"
-                                    disabled={isLoadingDepositNft}
-                                    isProcessing={isLoadingDepositNft}
-                                >
-                                    <img
-                                        src={metamask}
-                                        alt="icon"
-                                        className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
-                                    />
-                                    Deposit token {item}
-                                </Button>
+                                />
                             ))}
                         {ERC721Data.length === 0 && (
                             <Button color={"light"} disabled>
@@ -380,22 +366,12 @@ const HomePage = () => {
                     <h1 className="font-semibold text-xl">Deposited Nft:</h1>
                     <div className="flex flex-row gap-4 justify-start w-full overflow-x-auto mt-2">
                         {depositedERC721.map((item) => (
-                            <Button
+                            <NFTBtn
+                                action={() => withdrawERC721(item)}
+                                item={item}
+                                title="Withdraw token"
                                 key={item}
-                                gradientMonochrome={"success"}
-                                type="button"
-                                onClick={() => withdrawERC721(item)}
-                                className="group"
-                                disabled={isLoadingWithdrawNft}
-                                isProcessing={isLoadingWithdrawNft}
-                            >
-                                <img
-                                    src={metamask}
-                                    alt="icon"
-                                    className="w-6 h-5 object-cover mr-2 group-hover:rotate-180 duration-1000"
-                                />
-                                Withdraw token {item}
-                            </Button>
+                            />
                         ))}
                         {depositedERC721.length === 0 && (
                             <Button color={"light"} disabled>
@@ -414,14 +390,49 @@ const HomePage = () => {
                 <h1 className="text-2xl font-semibold pb-2">
                     Contract Information
                 </h1>
-                <div className="flex flex-col gap-2">
-                    <span>WalletBalance: {walletBalance} GO</span>
-                    <span>Default APR: {defaultApr}%</span>
-                    <span>APR: {apr}%</span>
-                    <span>BalanceERC20: {balanceERC20}</span>
-                    <span>DepositedERC20: {depostiedERC20}</span>
-                    <span>BalanceERC721: {balanceERC721}</span>
-                    <span>DepositedERC721: {depositedERC721.length}</span>
+                <div className="flex flex-col gap-4">
+                    <span className="font-medium">
+                        WalletBalance:
+                        <span className="px-2 py-1 rounded-md text-primary">
+                            {walletBalance} TBNB
+                        </span>
+                    </span>
+                    <span className="font-medium">
+                        Default APR:{" "}
+                        <span className="px-2 py-1 rounded-md text-primary">
+                            {defaultApr}%
+                        </span>
+                    </span>
+                    <span className="font-medium">
+                        APR:{" "}
+                        <span className="px-2 py-1 rounded-md text-primary">
+                            {apr}%
+                        </span>
+                    </span>
+                    <span className="font-medium">
+                        BalanceERC20:{" "}
+                        <span className="px-2 py-1 rounded-md text-primary">
+                            {balanceERC20}
+                        </span>
+                    </span>
+                    <span className="font-medium">
+                        DepositedERC20:{" "}
+                        <span className="px-2 py-1 rounded-md text-primary">
+                            {depostiedERC20}
+                        </span>
+                    </span>
+                    <span className="font-medium">
+                        BalanceERC721:{" "}
+                        <span className="px-2 py-1 rounded-md text-primary">
+                            {balanceERC721}
+                        </span>
+                    </span>
+                    <span className="font-medium">
+                        DepositedERC721:{" "}
+                        <span className="px-2 py-1 rounded-md text-primary">
+                            {depositedERC721.length}
+                        </span>
+                    </span>
                 </div>
             </div>
         </div>

@@ -1,7 +1,7 @@
 import { Button, Modal, Navbar, TextInput } from "flowbite-react";
 import { AuthState } from "@/stores/auth";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { login, refresh, register, verify } from "@/services/auth";
 import { toast } from "react-toastify";
 import { useWeb3ModalAccount } from "@web3modal/ethers/react";
@@ -19,7 +19,9 @@ const HeaderLayout = () => {
         setApr: setStoreAPR,
     } = AuthState();
     const [apr, setApr] = useState<number>(8);
+    const [isHome, setIsHome] = useState<boolean>(true);
     const { address } = useWeb3ModalAccount();
+    const { pathname } = useLocation();
 
     const navigate = useNavigate();
 
@@ -135,6 +137,15 @@ const HeaderLayout = () => {
         }
     }, [signer]);
 
+    useEffect(() => {
+        if (pathname === "/") {
+            setIsHome(true);
+        }
+        if (pathname === "/explorer") {
+            setIsHome(false);
+        }
+    }, [pathname]);
+
     return (
         <>
             <Navbar fluid rounded className="fixed shadow-md w-full z-[999]">
@@ -163,7 +174,7 @@ const HeaderLayout = () => {
                 <Navbar.Collapse>
                     <Navbar.Link
                         onClick={navigateHome}
-                        active
+                        active={isHome}
                         className="cursor-pointer"
                     >
                         Home
@@ -171,6 +182,7 @@ const HeaderLayout = () => {
                     <Navbar.Link
                         onClick={navigateExplorer}
                         className="cursor-pointer"
+                        active={!isHome}
                     >
                         Explorer
                     </Navbar.Link>
