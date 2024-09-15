@@ -26,10 +26,6 @@ jobs:
                   echo "VITE_SIGNATURE_MESSAGE=\"${{ secrets.SIGN_MESSAGE }}\"" >> client/.env
                   echo "VITE_PROJECT_ID=${{ secrets.WALLET_CONNECT_PROJECT_ID }}" >> client/.env
 
-            - name: show .env
-              run: |
-                  cat client/.env
-
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
